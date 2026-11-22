@@ -27,7 +27,7 @@ log = logging.getLogger("clearsignal.draft")
 
 def build_prompt(client: str) -> str:
     """The Claude prompt for one client, from the current warehouse. Raises ValueError for an unknown client."""
-    df = load(config.DB_PATH)
+    df = load()
     qa = warehouse.read_table("qa_results")
     clients = sorted(df["client"].unique())
     if client not in clients:

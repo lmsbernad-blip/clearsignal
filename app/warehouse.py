@@ -50,8 +50,9 @@ def _first_line(text: str) -> str:
     return text.strip().splitlines()[0][:300] if text.strip() else ""
 
 
-def missing_tables(db_path: Path = config.DB_PATH) -> list[str]:
+def missing_tables(db_path: Path | None = None) -> list[str]:
     """Required tables that are not in the warehouse (all of them if the file doesn't exist)."""
+    db_path = Path(db_path or config.DB_PATH)
     if not Path(db_path).exists():
         return list(config.REQUIRED_TABLES)
     try:
@@ -62,13 +63,14 @@ def missing_tables(db_path: Path = config.DB_PATH) -> list[str]:
     return [t for t in config.REQUIRED_TABLES if t not in present]
 
 
-def build(db_path: Path = config.DB_PATH, root: Path = config.ROOT, sql_dir: Path = config.SQL_DIR) -> dict[str, int]:
+def build(db_path: Path | None = None, root: Path | None = None, sql_dir: Path | None = None) -> dict[str, int]:
     """Run sql/*.sql in order into `db_path`, reading inputs relative to `root`.
 
     Returns row counts per required table. Raises WarehouseError with a readable message on failure;
     the existing warehouse (if any) is left untouched.
     """
-    db_path, root = Path(db_path), Path(root)
+    db_path, root = Path(db_path or config.DB_PATH), Path(root or config.ROOT)
+    sql_dir = Path(sql_dir or config.SQL_DIR)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = db_path.with_name(f"{db_path.stem}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
     sql_files = sorted(Path(sql_dir).glob("*.sql"))
@@ -77,8 +79,9 @@ def build(db_path: Path = config.DB_PATH, root: Path = config.ROOT, sql_dir: Pat
     try:
         con = duckdb.connect(str(tmp))
         try:
-            con.execute(f"set file_search_path = {_sql_literal(root.as_posix())}")
-            for name, value in config.sql_variables().items():
+            inputs = {f"raw_{k}": (root / v).as_posix() for k, v in config.RAW_FILES.items()}
+            inputs |= {f"seed_{k}": (root / v).as_posix() for k, v in config.SEED_FILES.items()}
+            for name, value in (config.sql_variables() | inputs).items():
                 con.execute(f"set variable {name} = {_sql_literal(value)}")
             for sql_file in sql_files:
                 try:
@@ -103,8 +106,9 @@ def build(db_path: Path = config.DB_PATH, root: Path = config.ROOT, sql_dir: Pat
     return counts
 
 
-def read_table(name: str, db_path: Path = config.DB_PATH) -> pd.DataFrame:
+def read_table(name: str, db_path: Path | None = None) -> pd.DataFrame:
     """Read one allow-listed table, read-only. Unknown names are refused, never put into SQL."""
+    db_path = Path(db_path or config.DB_PATH)
     if name not in config.APP_TABLES:
         raise ValueError(f"Table {name!r} is not one the app may read.")
     try:

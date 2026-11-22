@@ -57,7 +57,7 @@ def table(name: str) -> pd.DataFrame:
 
 @st.cache_data
 def mart() -> pd.DataFrame:
-    return load(config.DB_PATH)
+    return load()
 
 
 @st.cache_data

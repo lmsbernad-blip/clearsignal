@@ -67,11 +67,11 @@ def nouns(df: pd.DataFrame) -> dict[str, str]:
 
 
 # ----------------------------------------------------------------------------- data
-def load(db_path: Path | str = config.DB_PATH) -> pd.DataFrame:
+def load(db_path: Path | str | None = None) -> pd.DataFrame:
     """Campaign × day mart from the warehouse, in a fixed order, with a readable channel label."""
     import warehouse
 
-    df = warehouse.read_table("mart_campaign_daily", Path(db_path))
+    df = warehouse.read_table("mart_campaign_daily", Path(db_path) if db_path else None)
     df["date"] = pd.to_datetime(df["date"])
     # A fixed order matters: "recent days" in the optimizer must not depend on how DuckDB returned the rows.
     df = df.sort_values(["client", "platform", "campaign_name", "date"], ignore_index=True)
