@@ -8,6 +8,8 @@ ClearSignal is a small batch pipeline plus a read-only dashboard.
 2. **Serve:** `app/streamlit_app.py` opens that file **read-only**, does the light analytics in Python (`app/analytics.py`) and draws the pages (`app/ui.py`).
 3. **Draft (optional):** `app/prompts.py` turns the week's facts into a prompt. The app shows the prompt and lets the user download it; `scripts/draft_client_note.py` sends it to Claude when an API key is set.
 
+Two kinds of check protect the numbers. **Input contracts** (`app/contracts.py`) run before any SQL and reject files that would break the build or skew results: missing columns, unparseable values, out-of-range dates, negative spend, impressions or clicks, non-USD currency. **Data tests** (`sql/05_data_tests.sql`) run after the build and catch bugs in the pipeline itself. QA checks (`03`) are different: they find problems in the *client's* data and report them, without stopping the build.
+
 There is no server-side state other than the DuckDB file, and nothing is written back to ad platforms.
 
 ## 2. Data flow
@@ -32,8 +34,14 @@ flowchart LR
     S1 --> S2 --> S3
     S2 --> S4
     S1 --> S3
+    S5["05 data tests<br/>data_test_results (9 tests)"]
+    S3 --> S5
+    S4 --> S5
   end
-  SRC --> S1
+  S5 -- "any failure" --> STOP
+  SRC --> VC{{"Input contracts<br/>app/contracts.py<br/>columns · types · dates · ≥ 0 · USD"}}
+  VC -- pass --> S1
+  VC -- fail --> STOP(["Build stops with a readable list<br/>old warehouse kept"])
 
   subgraph APP["Streamlit app (read-only)"]
     direction TB
@@ -70,6 +78,7 @@ flowchart LR
 | QA | `qa_results` | one row per failing check × object | The morning data-health list, written in plain language (title, detail, action, severity, spend at risk) |
 | Reconciliation | `reconciliation_weekly` | week × campaign | Platform vs GA4 gap and status for the last 8 weeks |
 | Reconciliation | `reconciliation_summary` | campaign | 8-week totals, typical status, weeks needing action |
+| Data tests | `data_test_results` | test | Checks on the built warehouse: unique grain, spend preserved to the cent, no null keys, known campaign types and statuses. Any failure stops the build. |
 
 The SQL holds the **rules that define trustworthy data** (dedupe, unit fixes, checks, statuses), so an analyst can review them as SQL. Python holds **presentation and modelling** (KPIs for a chosen window, response curves, optimizer, wording).
 
