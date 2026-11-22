@@ -85,7 +85,7 @@ channels = " and ".join(sorted({PLATFORM_NAME.get(p, p).split(" (")[0] for p in 
 
 # ---------------------------------------------------------------- header
 ui.hero(client, f"{model} · advertising on {channels} · last {days} days compared with the {days} days before",
-        int((cqa["severity"] == "High").sum()), f"{as_of:%b %-d, %Y}")
+        int((cqa["severity"] == "High").sum()), f"{as_of:%b} {as_of.day}, {as_of:%Y}")
 
 daily = cur.groupby("date").agg(spend=("spend", "sum"), value=(f"{basis}_value", "sum"),
                                 conv=(f"{basis}_conversions", "sum")).reset_index()

@@ -139,7 +139,7 @@ def weekly_summary(df: pd.DataFrame, client: str, alerts: pd.DataFrame, plan: pd
     uplift = plan["recommended_value"].sum() / plan["current_value"].sum() - 1
 
     lines = [
-        f"**{client}: week ending {as_of:%b %-d, %Y}**",
+        f"**{client}: week ending {as_of:%b} {as_of.day}, {as_of:%Y}**",
         "",
         f"- **Results:** ${k1['spend']:,.0f} spent ({move(k1['spend'], k0['spend'])}) brought in ${k1['value']:,.0f} in "
         f"{n['value']}, or **${k1['roas']:.2f} back for every $1** ({move(k1['roas'], k0['roas'])}). "
