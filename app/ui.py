@@ -1,7 +1,9 @@
 """Visual layer: theme, CSS, and small HTML components used by the app."""
+
 from __future__ import annotations
 
 import html
+from collections.abc import Iterable
 
 import numpy as np
 import plotly.graph_objects as go
@@ -21,22 +23,27 @@ BG = "#F5F7FA"
 SERIES = [TEAL, ORANGE, "#4C5BD4", "#2BB3A3", "#C2410C", "#7C8BA1", "#9B5DE5", "#E0B000"]
 
 # ------------------------------------------------------------------ plotly theme
-pio.templates["kit"] = go.layout.Template(layout=go.Layout(
-    font=dict(family="Inter, system-ui, sans-serif", size=13, color=INK),
-    colorway=SERIES,
-    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(l=8, r=8, t=36, b=8),
-    xaxis=dict(showgrid=False, linecolor=LINE, ticks="outside", tickcolor=LINE, title=None),
-    yaxis=dict(gridcolor=LINE, zeroline=False, title=None),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, title=None, font=dict(size=12)),
-    hoverlabel=dict(bgcolor="white", bordercolor=LINE, font=dict(color=INK)),
-    title=dict(font=dict(size=15, color=INK), x=0, xanchor="left"),
-))
+pio.templates["kit"] = go.layout.Template(
+    layout=go.Layout(
+        font=dict(family="Inter, system-ui, sans-serif", size=13, color=INK),
+        colorway=SERIES,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=8, r=8, t=36, b=8),
+        xaxis=dict(showgrid=False, linecolor=LINE, ticks="outside", tickcolor=LINE, title=None),
+        yaxis=dict(gridcolor=LINE, zeroline=False, title=None),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, title=None, font=dict(size=12)),
+        hoverlabel=dict(bgcolor="white", bordercolor=LINE, font=dict(color=INK)),
+        title=dict(font=dict(size=15, color=INK), x=0, xanchor="left"),
+    )
+)
 pio.templates.default = "plotly_white+kit"
 
 
 def inject_css() -> None:
-    st.markdown(f"""
+    """Add the app's stylesheet (fonts, sidebar, hero, cards, tabs) to the page."""
+    st.markdown(
+        f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 'Inter', system-ui, sans-serif; }}
@@ -135,42 +142,64 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
 [data-testid="stDataFrame"] {{ border:1px solid {LINE}; border-radius:14px; overflow:hidden; background:#fff; }}
 [data-testid="stPlotlyChart"] {{ background:#fff; border:1px solid {LINE}; border-radius:16px; padding:.5rem .6rem; }}
 .stDownloadButton button, .stButton button {{ border-radius:10px; font-weight:600; border:1px solid {LINE}; }}
-</style>""", unsafe_allow_html=True)
+</style>""",
+        unsafe_allow_html=True,
+    )
 
 
-def style(fig, title: str = "", height: int = 380, legend: bool = True):
+def style(fig: go.Figure, title: str = "", height: int = 380, legend: bool = True) -> go.Figure:
     """Consistent chart chrome: title top-left, legend below, no axis titles."""
     fig.update_layout(
         title=dict(text=f"<b>{title}</b>" if title else None, x=0.01, y=0.97, yanchor="top", font=dict(size=15)),
-        height=height, showlegend=legend, margin=dict(l=8, r=16, t=56 if title else 16, b=48 if legend else 8),
+        height=height,
+        showlegend=legend,
+        margin=dict(l=8, r=16, t=56 if title else 16, b=48 if legend else 8),
         legend=dict(orientation="h", yanchor="top", y=-0.16, x=0, title_text=""),
-        xaxis_title=None, yaxis_title=None)
+        xaxis_title=None,
+        yaxis_title=None,
+    )
     return fig
 
 
-def esc(x) -> str:
+def esc(x: object) -> str:
+    """HTML-escape any value before it goes into markup rendered with unsafe_allow_html."""
     return html.escape(str(x))
 
 
 def sidebar_brand() -> None:
-    st.sidebar.markdown("""<div class="brand"><div class="brand-mark">CS</div>
+    """ClearSignal logo and tagline at the top of the sidebar."""
+    st.sidebar.markdown(
+        """<div class="brand"><div class="brand-mark">CS</div>
       <div><div class="brand-name">ClearSignal</div><div class="brand-sub">Ad results you can trust</div></div></div>""",
-                        unsafe_allow_html=True)
+        unsafe_allow_html=True,
+    )
 
 
 def hero(client: str, subtitle: str, n_high: int, as_of: str) -> None:
-    pill = (f'<span class="pill pill-red"><span class="dot" style="background:#FF7A7A"></span>{n_high} data '
-            f'issue{"s" if n_high != 1 else ""} to fix</span>') if n_high else \
-        '<span class="pill pill-green"><span class="dot" style="background:#6EE7B7"></span>Numbers checked and ready</span>'
-    steps = "".join(f'<span class="step"><b>{i}</b>{s}</span>' for i, s in
-                    enumerate(["Collect", "Check", "Compare", "Report", "Advise"], 1))
-    st.markdown(f"""<div class="hero"><div class="hero-top"><div>
+    """Page header: client name, subtitle, data date and a pill with the number of High issues."""
+    pill = (
+        (
+            f'<span class="pill pill-red"><span class="dot" style="background:#FF7A7A"></span>{n_high} data '
+            f"issue{'s' if n_high != 1 else ''} to fix</span>"
+        )
+        if n_high
+        else '<span class="pill pill-green"><span class="dot" style="background:#6EE7B7"></span>Numbers checked and ready</span>'
+    )
+    steps = "".join(
+        f'<span class="step"><b>{i}</b>{s}</span>'
+        for i, s in enumerate(["Collect", "Check", "Compare", "Report", "Advise"], 1)
+    )
+    st.markdown(
+        f"""<div class="hero"><div class="hero-top"><div>
       <div class="eyebrow">ClearSignal · numbers up to {esc(as_of)}</div>
       <h1>{esc(client)}</h1><p>{esc(subtitle)}</p></div>{pill}</div>
-      <div class="steps">{steps}</div></div>""", unsafe_allow_html=True)
+      <div class="steps">{steps}</div></div>""",
+        unsafe_allow_html=True,
+    )
 
 
-def sparkline(values, color=TEAL, w=180, h=38) -> str:
+def sparkline(values: Iterable[float], color: str = TEAL, w: int = 180, h: int = 38) -> str:
+    """Small inline SVG trend line (lightly smoothed); empty string when there are fewer than 2 points."""
     v = np.asarray(values, dtype=float)
     v = v[~np.isnan(v)]
     if len(v) >= 7:  # light smoothing so the trend reads, not the daily noise
@@ -181,18 +210,23 @@ def sparkline(values, color=TEAL, w=180, h=38) -> str:
     rng = hi - lo or 1
     xs = np.linspace(0, w, len(v))
     ys = h - 3 - (v - lo) / rng * (h - 6)
-    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in zip(xs, ys))
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in zip(xs, ys, strict=True))
     area = f"0,{h} " + pts + f" {w},{h}"
     gid = f"g{abs(hash((color, len(v), round(v.sum(), 2)))) % 10**8}"
-    return (f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none">'
-            f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{color}" stop-opacity=".22"/>'
-            f'<stop offset="1" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
-            f'<polygon points="{area}" fill="url(#{gid})"/><polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2"'
-            f' stroke-linejoin="round" stroke-linecap="round"/></svg>')
+    return (
+        f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none">'
+        f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{color}" stop-opacity=".22"/>'
+        f'<stop offset="1" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
+        f'<polygon points="{area}" fill="url(#{gid})"/><polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2"'
+        f' stroke-linejoin="round" stroke-linecap="round"/></svg>'
+    )
 
 
-def kpi_cards(items) -> None:
-    """items: list of (label, value_str, delta_float or None, good_when_up: bool, spark_values, color)"""
+def kpi_cards(items: list[tuple]) -> None:
+    """Row of KPI cards. items: (label, value_str, delta or None, good_when_up, spark_values, color).
+
+    The change is shown with an arrow and a sign, not only a color.
+    """
     cards = []
     for label, value, delta, up_good, spark, color in items:
         if delta is None or np.isnan(delta):
@@ -201,34 +235,61 @@ def kpi_cards(items) -> None:
             cls = "delta-flat" if abs(delta) < 0.005 else ("delta-good" if (delta > 0) == up_good else "delta-bad")
             arrow = "▲" if delta > 0 else "▼"
             d = f'<span class="delta {cls}">{arrow} {abs(delta):.1%}</span>'
-        cards.append(f'<div class="kpi"><div class="kpi-label">{esc(label)}</div><div class="kpi-value">{esc(value)}</div>'
-                     f'{d}{sparkline(spark, color)}</div>')
+        cards.append(
+            f'<div class="kpi"><div class="kpi-label">{esc(label)}</div><div class="kpi-value">{esc(value)}</div>'
+            f"{d}{sparkline(spark, color)}</div>"
+        )
     st.markdown(f'<div class="kpis">{"".join(cards)}</div>', unsafe_allow_html=True)
 
 
 def section(title: str, text: str = "") -> None:
-    st.markdown(f'<div class="sec"><h3>{esc(title)}</h3>{f"<p>{text}</p>" if text else ""}</div>', unsafe_allow_html=True)
+    """Section heading with an optional one-line explanation."""
+    st.markdown(
+        f'<div class="sec"><h3>{esc(title)}</h3>{f"<p>{text}</p>" if text else ""}</div>', unsafe_allow_html=True
+    )
 
 
-def issue_card(severity, title, client, platform, where, detail, usd=None, action="") -> None:
+def issue_card(
+    severity: str,
+    title: str,
+    client: str,
+    platform: str,
+    where: str,
+    detail: str,
+    usd: float | None = None,
+    action: str = "",
+) -> None:
+    """One data-health issue: severity badge with a text label, title, chips, detail and next step."""
     color = RED if severity == "High" else AMBER
     label = "Fix now" if severity == "High" else "Watch"
-    impact = f'<span class="impact">${usd:,.0f} of ad spend affected</span>' if usd is not None and not np.isnan(usd) else ""
+    impact = (
+        f'<span class="impact">${usd:,.0f} of ad spend affected</span>' if usd is not None and not np.isnan(usd) else ""
+    )
     act = f'<div class="issue-action"><b>Next step:</b> {esc(action)}</div>' if action else ""
-    st.markdown(f"""<div class="issue" style="--c:{color}"><div class="issue-top">
+    st.markdown(
+        f"""<div class="issue" style="--c:{color}"><div class="issue-top">
       <div style="display:flex;gap:.6rem;align-items:center"><span class="badge" style="--c:{color}">{label}</span>
       <span class="issue-title">{esc(title)}</span></div>{impact}</div>
       <div class="chips"><span class="chip">{esc(client)}</span><span class="chip">{esc(platform)}</span>
       <span class="chip">{esc(where)}</span></div>
-      <div class="issue-detail">{esc(detail)}</div>{act}</div>""", unsafe_allow_html=True)
+      <div class="issue-detail">{esc(detail)}</div>{act}</div>""",
+        unsafe_allow_html=True,
+    )
 
 
-def stat_row(items) -> None:
-    """items: list of (label, value)"""
-    st.markdown('<div class="stat-row">' + "".join(
-        f'<div class="stat"><div class="stat-l">{esc(l)}</div><div class="stat-v">{esc(v)}</div></div>' for l, v in items)
-        + "</div>", unsafe_allow_html=True)
+def stat_row(items: list[tuple[str, str]]) -> None:
+    """Row of up to four labelled numbers. items: (label, value)."""
+    st.markdown(
+        '<div class="stat-row">'
+        + "".join(
+            f'<div class="stat"><div class="stat-l">{esc(l)}</div><div class="stat-v">{esc(v)}</div></div>'
+            for l, v in items
+        )
+        + "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def callout(md_html: str) -> None:
+    """Highlighted note. `md_html` is trusted markup written in the code, never data."""
     st.markdown(f'<div class="callout">{md_html}</div>', unsafe_allow_html=True)

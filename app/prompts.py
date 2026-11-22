@@ -1,12 +1,20 @@
 """Prompt templates for the Claude steps in the workflow. Kept in code so they are versioned and reviewed like SQL."""
+
+from __future__ import annotations
+
 import pandas as pd
 
 
 def client_note_prompt(client: str, summary_md: str, qa_rows: pd.DataFrame) -> str:
-    issues = "\n".join(
-        f"- [{'Fix now' if r.severity == 'High' else 'Watch'}] {r.title} ({r.platform}, {r.object}): {r.detail} "
-        f"Next step: {r.action}" for r in qa_rows.itertuples()
-    ) or "- None"
+    """Prompt asking Claude for the client email and internal notes, using only the given facts and QA issues."""
+    issues = (
+        "\n".join(
+            f"- [{'Fix now' if r.severity == 'High' else 'Watch'}] {r.title} ({r.platform}, {r.object}): {r.detail} "
+            f"Next step: {r.action}"
+            for r in qa_rows.itertuples()
+        )
+        or "- None"
+    )
     return f"""You are a marketing analytics lead at a US advertising agency writing the weekly update for the client "{client}".
 
 FACTS (from the reporting warehouse; do not invent numbers or causes beyond these):
