@@ -4,3 +4,10 @@ data/warehouse.duckdb
 data/warehouse.duckdb.wal
 .DS_Store
 
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.pyc

@@ -18,3 +18,13 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["analytics", "config", "prompts", "ui", "warehouse"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["app", "scripts", "tests"]
+addopts = "-ra"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/streamlit_app.py"]  # exercised by the AppTest smoke tests, which run it as a script
