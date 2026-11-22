@@ -38,17 +38,20 @@ group by client, platform, campaign_name
 
 union all
 -- 4. Paid social traffic in GA4 with no UTM tags
-select 'missing_utms', 'Paid ads showing up as free traffic', 'High', client, 'Meta Ads', 'Facebook visits with no ad tags', count(*), null,
-       'Since ' || strftime(min(date), '%b %-d') || ', Google Analytics has recorded ' || format('{:,}', cast(round(sum(ga4_conversions)) as bigint)) || ' leads from Facebook as ordinary '
+select 'missing_utms', 'Paid ads showing up as free traffic', 'High', g.client, 'Meta Ads', 'Facebook visits with no ad tags', count(*), null,
+       'Since ' || strftime(min(g.date), '%b %-d') || ', Google Analytics has recorded ' || format('{:,}', cast(round(sum(g.ga4_conversions)) as bigint))
+       || case when max(c.business_model) = 'ecommerce' then ' sales' else ' leads' end || ' from Facebook as ordinary '
        || 'website referrals instead of paid ads, because one campaign''s ad links are missing tracking tags.',
        'Media buyer adds tracking tags to the ad links; we then credit the results to the right campaign.'
-from stg_ga4 where source_medium like '%facebook%' and source_medium like '%referral%'
-group by client, source_medium
+from stg_ga4 g
+left join seed_clients c using (client)
+where g.source_medium like '%facebook%' and g.source_medium like '%referral%'
+group by g.client, g.source_medium
 
 union all
 -- 5. Campaigns with no matching GA4 traffic at all
 select 'no_ga4_match', 'Campaign results not visible in Google Analytics', 'High', m.client, m.platform, m.campaign_name, 0, round(sum(a.spend), 2),
-       'Google Analytics can''t see any results for this campaign, so the report shows it earning nothing, even though Meta reports '
+       'Google Analytics can''t see any results for this campaign, so the report shows it earning nothing, even though ' || replace(m.platform, ' Ads', '') || ' reports '
        || format('{:,.0f}', sum(a.platform_conversions)) || ' results.',
        case when m.utm_campaign is null then 'Add tracking tags to the ad links (see the item above).'
             else 'Check the campaign''s tracking template.' end
@@ -59,21 +62,28 @@ group by m.client, m.platform, m.campaign_name, m.utm_campaign
 
 union all
 -- 6. Tracking break: spend but zero platform conversions for 2+ days
-select 'tracking_break', 'Ad platform stopped counting sales', 'High', client, platform, campaign_name, count(*), round(sum(spend), 2),
+select 'tracking_break',
+       'Ad platform stopped counting ' || case when max(business_model) = 'ecommerce' then 'sales' else 'leads' end,
+       'High', client, platform, campaign_name, count(*), round(sum(spend), 2),
        'From ' || strftime(min(date), '%b %-d') || ' to ' || strftime(max(date), '%b %-d') || ', ads kept running ($' || format('{:,.0f}', sum(spend))
-       || ') but Meta counted zero sales, while Google Analytics still recorded ' || cast(round(sum(ga4_conversions)) as bigint)
+       || ') but ' || replace(platform, ' Ads', '') || ' counted zero '
+       || case when max(business_model) = 'ecommerce' then 'sales' else 'leads' end
+       || ', while Google Analytics still recorded ' || cast(round(sum(ga4_conversions)) as bigint)
        || '. The ads didn''t stop working; the tracking did.',
-       'Ask the client''s web team to check the Meta tracking code. Meta can''t optimize well until it''s fixed.'
+       'Ask the client''s web team to check the ' || replace(platform, ' Ads', '') || ' tracking code. '
+       || replace(platform, ' Ads', '') || ' can''t optimize well until it''s fixed.'
 from mart_campaign_daily d
 where platform_conversions = 0 and spend > 0
-  and spend > 0.3 * (select median(spend) from mart_campaign_daily x where x.campaign_name = d.campaign_name)
+  and spend > getvariable('tracking_break_min_spend_share') * (
+      select median(spend) from mart_campaign_daily x
+      where x.client = d.client and x.platform = d.platform and x.campaign_name = d.campaign_name)
 group by client, platform, campaign_name
-having count(*) >= 2
+having count(*) >= getvariable('tracking_break_min_days')
 
 union all
 -- 7. Budget pacing
 select 'budget_pacing', case when pace > 1 then 'Spending ahead of budget' else 'Spending behind budget' end,
-       case when abs(pace - 1) > 0.25 then 'High' else 'Medium' end, client, 'All channels', 'This month', days_elapsed,
+       case when abs(pace - 1) > getvariable('pacing_high_severity') then 'High' else 'Medium' end, client, 'All channels', 'This month', days_elapsed,
        round(mtd_spend - planned_to_date, 2),
        '$' || format('{:,.0f}', mtd_spend) || ' spent so far this month, ' || format('{:.0f}', abs(pace - 1) * 100) || '% '
        || case when pace > 1 then 'more' else 'less' end || ' than planned. At this rate the month ends at $'
@@ -90,7 +100,7 @@ from (
     where date >= date_trunc('month', (select max(date) from mart_campaign_daily))
     group by client
 )
-where pace > 1.10 or pace < 0.85
+where pace > getvariable('pacing_high') or pace < getvariable('pacing_low')
 
 union all
 -- 8. Freshness
@@ -101,5 +111,9 @@ from (
     select client, 'Google Ads' as src, max(date) as max_d from stg_google_ads group by client
     union all select client, 'Meta Ads', max(date) from stg_meta_ads_raw group by client
     union all select client, 'Google Analytics', max(date) from stg_ga4 group by client
-) cross join (select max(date) as expected from stg_ga4)
+) cross join (
+    -- the newest date any source has reached, so a stale GA4 is caught too
+    select greatest((select max(date) from stg_google_ads), (select max(date) from stg_meta_ads_raw),
+                    (select max(date) from stg_ga4)) as expected
+)
 where max_d < expected;
