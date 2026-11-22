@@ -4,7 +4,7 @@
 
 ClearSignal is a small batch pipeline plus a read-only dashboard.
 
-1. **Build (offline):** `scripts/build_warehouse.py` runs the SQL files in `sql/` in order. They load the CSV exports and seeds into a single DuckDB file, `data/warehouse.duckdb`.
+1. **Build (offline):** `scripts/build_warehouse.py` runs the SQL files in `sql/` in order. They load the CSV exports and seeds into a single DuckDB file, `data/warehouse.duckdb`. `app/warehouse.py` passes each input to the SQL as an absolute path and builds into a temporary file, which replaces the warehouse only once every step has succeeded. Staging is stored as tables, so the finished warehouse never needs the CSVs again.
 2. **Serve:** `app/streamlit_app.py` opens that file **read-only**, does the light analytics in Python (`app/analytics.py`) and draws the pages (`app/ui.py`).
 3. **Draft (optional):** `app/prompts.py` turns the week's facts into a prompt. The app shows the prompt and lets the user download it; `scripts/draft_client_note.py` sends it to Claude when an API key is set.
 
@@ -60,9 +60,9 @@ flowchart LR
 | Staging | `seed_campaign_mapping` | campaign | Analyst-maintained: campaign → client, type, `utm_campaign` |
 | Staging | `seed_media_plan` | client × month | Planned monthly budget (pacing) |
 | Staging | `seed_clients` | client | Business model, value per lead, GA4 time zone |
-| Staging | `stg_google_ads` (view) | source row | Renamed columns; spend from `Cost`, or from `cost_micros ÷ 1e6` (flagged) |
-| Staging | `stg_meta_ads_raw` (view) | source row | Renamed columns, **duplicates kept** so QA can see them; `synced_at` |
-| Staging | `stg_ga4` (view) | source row | Parsed dates; `source_medium`, `utm_campaign`, conversions, revenue |
+| Staging | `stg_google_ads` | source row | Renamed columns; spend from `Cost`, or from `cost_micros ÷ 1e6` (flagged) |
+| Staging | `stg_meta_ads_raw` | source row | Renamed columns, **duplicates kept** so QA can see them; `synced_at` |
+| Staging | `stg_ga4` | source row | Parsed dates; `source_medium`, `utm_campaign`, conversions, revenue |
 | Model | `int_meta_ads` (view) | date × campaign | Meta deduplicated: latest `synced_at` wins |
 | Model | `fct_ads_daily` | date × client × platform × campaign | Clean spend, delivery and platform conversions for both platforms |
 | Model | `fct_ga4_paid_daily` | date × campaign | GA4 paid traffic matched to campaigns through `utm_campaign` |

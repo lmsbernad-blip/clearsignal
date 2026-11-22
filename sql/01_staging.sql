@@ -1,11 +1,12 @@
--- 01 STAGING: one view per source, renamed to a common vocabulary. No business logic yet.
+-- 01 STAGING: one table per source, renamed to a common vocabulary. No business logic yet.
+-- Input paths arrive as variables (absolute paths set by app/warehouse.py), so a build reads only the folder it was given.
 
-create or replace table seed_campaign_mapping as select * from read_csv_auto('data/seeds/campaign_mapping.csv', header = true);
-create or replace table seed_media_plan      as select * from read_csv_auto('data/seeds/media_plan.csv', header = true);
-create or replace table seed_clients         as select * from read_csv_auto('data/seeds/clients.csv', header = true);
+create or replace table seed_campaign_mapping as select * from read_csv_auto(getvariable('seed_campaign_mapping'), header = true);
+create or replace table seed_media_plan      as select * from read_csv_auto(getvariable('seed_media_plan'), header = true);
+create or replace table seed_clients         as select * from read_csv_auto(getvariable('seed_clients'), header = true);
 
 -- Google Ads: two connectors feed this file; one sends Cost in dollars, the other cost_micros.
-create or replace view stg_google_ads as
+create or replace table stg_google_ads as
 select
     cast("Date" as date)                                                   as date,
     regexp_replace("Account name", ' - Google Ads$', '')                   as client,
@@ -18,10 +19,10 @@ select
     "Conversions"                                                          as platform_conversions,
     "Conv. value"                                                          as platform_conversion_value,
     "Currency"                                                             as currency
-from read_csv_auto('data/raw/google_ads_campaign_daily.csv', header = true);
+from read_csv_auto(getvariable('raw_google_ads'), header = true);
 
 -- Meta Ads: raw rows kept as-is so QA can see re-sync duplicates; deduped in the next layer.
-create or replace view stg_meta_ads_raw as
+create or replace table stg_meta_ads_raw as
 select
     cast(date_start as date)                                               as date,
     regexp_replace(account_name, ' - Meta$', '')                           as client,
@@ -35,10 +36,10 @@ select
     'USD'                                                                  as currency,
     account_timezone,
     cast(_synced_at as timestamp)                                          as synced_at
-from read_csv_auto('data/raw/meta_ads_insights.csv', header = true);
+from read_csv_auto(getvariable('raw_meta_ads'), header = true);
 
 -- GA4: dates arrive as YYYYMMDD strings; property name carries the client.
-create or replace view stg_ga4 as
+create or replace table stg_ga4 as
 select
     strptime(cast(date as varchar), '%Y%m%d')::date                        as date,
     regexp_replace(property, ' GA4$', '')                                  as client,
@@ -47,4 +48,4 @@ select
     sessions,
     "keyEvents"                                                            as ga4_conversions,
     "purchaseRevenue"                                                      as ga4_revenue
-from read_csv_auto('data/raw/ga4_traffic_acquisition.csv', header = true, types = {'date': 'VARCHAR'});
+from read_csv_auto(getvariable('raw_ga4'), header = true, types = {'date': 'VARCHAR'});
