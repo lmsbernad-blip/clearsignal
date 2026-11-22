@@ -1,0 +1,20 @@
+[project]
+name = "clearsignal"
+version = "1.0.0"
+description = "Ad results you can trust: onboarding, data checks, reconciliation and reporting for agency ad accounts"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["app", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = [
+    "E501",  # line length is handled by ruff format; long user-facing strings are kept whole
+    "E741",  # short loop names such as l are used in a few comprehensions
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["analytics", "config", "prompts", "ui", "warehouse"]
