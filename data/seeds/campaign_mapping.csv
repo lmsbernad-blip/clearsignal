@@ -1,0 +1,13 @@
+platform,campaign_name,client,campaign_type,utm_campaign
+Google Ads,DTC_GS_Brand_US,DTC Skincare,Search - Brand,dtc_gs_brand_us
+Google Ads,DTC_GS_NonBrand_US,DTC Skincare,Search - Non-brand,dtc_gs_nonbrand_us
+Google Ads,DTC_GSH_AllProducts_US,DTC Skincare,Shopping,dtc_gsh_allproducts_us
+Meta Ads,DTC_FB_Prospecting_US,DTC Skincare,Paid Social - Prospecting,dtc-meta-prospecting
+Meta Ads,DTC_FB_Retargeting_US,DTC Skincare,Paid Social - Retargeting,dtc-meta-retargeting
+Google Ads,B2B_GS_Brand_US,B2B SaaS,Search - Brand,b2b_gs_brand_us
+Google Ads,B2B_GS_NonBrand_US,B2B SaaS,Search - Non-brand,b2b_gs_nonbrand_us
+Meta Ads,B2B_FB_LeadGen_US,B2B SaaS,Paid Social - Lead Gen,b2b_fb_leadgen_us
+Meta Ads,B2B_FB_Retargeting_US,B2B SaaS,Paid Social - Retargeting,
+Google Ads,HOME_GS_Services_US,Home Services,Search - Non-brand,home_gs_services_us
+Google Ads,HOME_PMAX_Local_US,Home Services,Performance Max,home_pmax_local_us
+Meta Ads,HOME_FB_Leads_US,Home Services,Paid Social - Lead Gen,home_fb_leads_us
