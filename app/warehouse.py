@@ -16,6 +16,7 @@ import duckdb
 import pandas as pd
 
 import config
+import contracts
 
 log = logging.getLogger("clearsignal.warehouse")
 
@@ -24,8 +25,10 @@ class WarehouseError(RuntimeError):
     """A build or read problem, with a message written for the person running ClearSignal."""
 
 
-def _sql_literal(value: float | int | str) -> str:
-    """Render a config value as a SQL literal (strings quoted and escaped)."""
+def _sql_literal(value: float | int | str | tuple[str, ...]) -> str:
+    """Render a config value as a SQL literal (strings quoted and escaped; tuples become lists)."""
+    if isinstance(value, tuple | list):
+        return "[" + ", ".join(_sql_literal(v) for v in value) + "]"
     if isinstance(value, str):
         return "'" + value.replace("'", "''") + "'"
     return repr(value)
@@ -50,6 +53,23 @@ def _first_line(text: str) -> str:
     return text.strip().splitlines()[0][:300] if text.strip() else ""
 
 
+def _check_data_tests(con: duckdb.DuckDBPyConnection) -> None:
+    """Raise WarehouseError if any test in data_test_results (sql/05_data_tests.sql) failed."""
+    results = con.execute(
+        "select test_name, failures, description from data_test_results order by test_name"
+    ).fetchall()
+    if not results:
+        raise WarehouseError("No data tests ran (is sql/05_data_tests.sql missing?).")
+    failed = [(name, n, desc) for name, n, desc in results if n]
+    for name, n, _ in results:
+        log.info("  data test %-34s %s", name, "ok" if not n else f"FAILED ({n})")
+    if failed:
+        lines = "\n- ".join(f"{name}: {n} failing row(s). Rule: {desc}" for name, n, desc in failed)
+        raise WarehouseError(
+            f"{len(failed)} data test(s) failed after the build; the warehouse was not updated:\n- {lines}"
+        )
+
+
 def missing_tables(db_path: Path | None = None) -> list[str]:
     """Required tables that are not in the warehouse (all of them if the file doesn't exist)."""
     db_path = Path(db_path or config.DB_PATH)
@@ -71,6 +91,11 @@ def build(db_path: Path | None = None, root: Path | None = None, sql_dir: Path |
     """
     db_path, root = Path(db_path or config.DB_PATH), Path(root or config.ROOT)
     sql_dir = Path(sql_dir or config.SQL_DIR)
+    try:
+        contracts.validate_inputs(root)  # fail fast, before any SQL runs
+    except contracts.ContractError as err:
+        raise WarehouseError(str(err)) from err
+    log.info("input contracts passed for %d files", len(contracts.CONTRACTS))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = db_path.with_name(f"{db_path.stem}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
     sql_files = sorted(Path(sql_dir).glob("*.sql"))
@@ -89,6 +114,7 @@ def build(db_path: Path | None = None, root: Path | None = None, sql_dir: Path |
                 except duckdb.Error as err:
                     raise WarehouseError(f"{sql_file.name}: {_explain(err)}") from err
                 log.info("ran %s", sql_file.name)
+            _check_data_tests(con)
             counts = {t: con.execute(f"select count(*) from {t}").fetchone()[0] for t in config.REQUIRED_TABLES}  # noqa: S608 - names from config
         finally:
             con.close()
