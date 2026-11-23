@@ -68,7 +68,7 @@ Edit `app/config.py` only (match tolerance, pacing band, optimizer guardrails, b
 2. Wait for CI to pass: ruff, bandit, pip-audit, data reproducibility, build, pytest with an 80% coverage gate.
 3. Merge on your laptop (`git merge --no-ff`) and push `main`, so every commit carries your noreply email. Avoid merging with the GitHub button, unless "Keep my email addresses private" is on in your GitHub settings.
 4. For a release: update `CHANGELOG.md`, then `git tag -a vX.Y.Z -m "..."`, `git push origin vX.Y.Z`, `gh release create vX.Y.Z`.
-5. Streamlit Community Cloud redeploys `main` automatically within a minute or two.
+5. Streamlit Community Cloud redeploys `main` automatically within a minute or two. **If the change touched any module other than `app/streamlit_app.py`** (e.g. `ui.py`, `analytics.py`, `config.py`), open **Manage app → ⋮ → Reboot app** after the push: the hot update reloads the page script but can keep old copies of the other modules in memory. Then open the live app and check it loads.
 
 **Dependabot** opens update pull requests every Monday (pip and GitHub Actions). Merge them only when CI is green. numpy 2.5+ is held back on purpose, because it needs Python 3.12.
 
@@ -84,6 +84,7 @@ Live app: https://clearsignal-weehhlc3xrqohydemrycjr.streamlit.app/ · Manage it
 | "Error installing requirements" in the logs | A dependency pin broke, or the Python version changed | Check the app runs Python 3.11 (**Settings → General**); compare with the last green CI run; revert the bad `requirements.txt` change. |
 | Python traceback on a page | A code bug that reached `main` | Reproduce locally with `pytest` and `streamlit run`. To roll back fast: `git revert <bad commit>` on a branch, then a PR, CI and push; or point the app at the last good tag. |
 | Changes don't appear | The redeploy didn't trigger | **Manage app → Reboot app**. |
+| `AttributeError: module 'ui' has no attribute ...` (or similar) right after a deploy | The hot update kept an old copy of a module | **Manage app → ⋮ → Reboot app**. The code is fine if CI is green. |
 
 **Rollback**: every release is tagged (`v1.0.0`, …). `git revert` the bad change and push through the normal flow; never force-push `main`.
 
