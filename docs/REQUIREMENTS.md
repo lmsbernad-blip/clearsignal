@@ -1,6 +1,6 @@
 # ClearSignal: requirements
 
-Version 1.0 · status: draft for approval · owner: Lorenzo Bernad
+Version 1.0 · status: approved; every gap resolved in v1.0.0 · owner: Lorenzo Bernad
 
 ## 1. Purpose
 
@@ -118,20 +118,20 @@ Each requirement has a test that checks its acceptance criterion. "Demo data" me
 
 Checked on 2026-11-22 by reading the code, building the warehouse from demo data and running the app through `streamlit.testing` for all 18 filter combinations.
 
-| # | Req. | Gap | Severity |
-|---|---|---|---|
-| G-01 | NFR-04, FR-30 | **The app crashes on Windows at startup.** `f"{as_of:%b %-d, %Y}"` (`app/streamlit_app.py:88`, `app/analytics.py:142`) uses the Linux-only `%-d` code and raises `ValueError: Invalid format string`. It works on Streamlit Cloud (Linux) but not on the laptop used for the demo. | **High** |
-| G-02 | FR-36 | Pacing band mismatch: the Results chart says "on track" for 90–110% and turns red above 110%, but the data check (and the KPI dictionary) uses 85–110%. A client at 87% is "fine" in Data health but "13% under budget" on the chart. | Medium |
-| G-03 | NFR-02 | No friendly errors. If the warehouse is missing, the app runs the build through `subprocess(check=True)`, so a missing or broken CSV shows a raw stack trace. Malformed files are not detected. | Medium |
-| G-04 | NFR-03, FR-19 | No input contracts and no post-build data tests; the build does not stop on bad data. | Medium |
-| G-05 | FR-37, FR-38 | Edge cases can crash: `optimize_budget` fails on empty curves (a client with under 20 usable days); `weekly_summary` fails when no channel has value this week (`idxmax` of an empty table) and can print "$nan" when a week has zero conversions. Not hit by demo data. | Medium |
-| G-06 | NFR-06 | `table()` builds SQL with an f-string table name. Today it is only called with constants, so it is not exploitable, but there is no allowlist. | Low (Phase 6) |
-| G-07 | FR-52 | The prompt says "do not invent numbers" but does not mark facts and issues as data, so a campaign name containing instructions could be read as one. | Low (Phase 6) |
-| G-08 | FR-33 | Hard-coded nouns in check text: `tracking_break` always says "Meta counted zero **sales**" and `missing_utms` always says "**leads** from Facebook", whatever the client's business. Correct for today's demo data, wrong for any other client. | Low |
-| G-09 | NFR-10 | Thresholds are spread across SQL, `analytics.py` and the app (20%, 85/110%, 0.7/1.5, 1.10, 20 days, 60 days); no `config.py`; few type hints and docstrings; no lint setup. The optimizer runs twice per page (Where to spend next tab and Weekly client email tab). | Low |
-| G-10 | NFR-11 | No tests, no CI, unpinned dependencies (`>=` only), no `.venv` set up. | Medium |
-| G-11 | NFR-05 | `.gitignore` lacks `.env`, `.streamlit/secrets.toml` and `*.pyc`; there is no `.env.example`. | Low |
-| G-12 | NFR-13 | Private working notes sat inside the project folder (never tracked by git). | Low (Phase 6) |
-| G-13 | docs | `docs/04_CLAUDE_WORKFLOW.md` refers to a "Client update" tab; the tab is called "Weekly client email". | Cosmetic |
+| # | Req. | Gap | Severity | Resolution |
+|---|---|---|---|---|
+| G-01 | NFR-04, FR-30 | **The app crashes on Windows at startup.** `f"{as_of:%b %-d, %Y}"` (`app/streamlit_app.py:88`, `app/analytics.py:142`) uses the Linux-only `%-d` code and raises `ValueError: Invalid format string`. It works on Streamlit Cloud (Linux) but not on the laptop used for the demo. | **High** | Fixed: platform-independent date format (Phase 1) |
+| G-02 | FR-36 | Pacing band mismatch: the Results chart says "on track" for 90–110% and turns red above 110%, but the data check (and the KPI dictionary) uses 85–110%. A client at 87% is "fine" in Data health but "13% under budget" on the chart. | Medium | Fixed: chart uses `config.PACING_BAND`, the same as the check (Phase 3) |
+| G-03 | NFR-02 | No friendly errors. If the warehouse is missing, the app runs the build through `subprocess(check=True)`, so a missing or broken CSV shows a raw stack trace. Malformed files are not detected. | Medium | Fixed: atomic build, readable errors, `st.error` instead of tracebacks (Phase 3) |
+| G-04 | NFR-03, FR-19 | No input contracts and no post-build data tests; the build does not stop on bad data. | Medium | Fixed: input contracts plus 9 post-build data tests; the build fails fast (Phase 5) |
+| G-05 | FR-37, FR-38 | Edge cases can crash: `optimize_budget` fails on empty curves (a client with under 20 usable days); `weekly_summary` fails when no channel has value this week (`idxmax` of an empty table) and can print "$nan" when a week has zero conversions. Not hit by demo data. | Medium | Fixed: guards in the optimizer, weekly summary and draft script, with tests (Phase 3) |
+| G-06 | NFR-06 | `table()` builds SQL with an f-string table name. Today it is only called with constants, so it is not exploitable, but there is no allowlist. | Low (Phase 6) | Fixed: table allowlist plus a test (Phases 3 and 6) |
+| G-07 | FR-52 | The prompt says "do not invent numbers" but does not mark facts and issues as data, so a campaign name containing instructions could be read as one. | Low (Phase 6) | Fixed: data in escaped, delimited prompt blocks, plus a test (Phase 6) |
+| G-08 | FR-33 | Hard-coded nouns in check text: `tracking_break` always says "Meta counted zero **sales**" and `missing_utms` always says "**leads** from Facebook", whatever the client's business. Correct for today's demo data, wrong for any other client. | Low | Fixed: wording follows business model and platform (Phase 3) |
+| G-09 | NFR-10 | Thresholds are spread across SQL, `analytics.py` and the app (20%, 85/110%, 0.7/1.5, 1.10, 20 days, 60 days); no `config.py`; few type hints and docstrings; no lint setup. The optimizer runs twice per page (Where to spend next tab and Weekly client email tab). | Low | Fixed: `app/config.py`, type hints and docstrings, ruff clean, optimizer runs once (Phase 3) |
+| G-10 | NFR-11 | No tests, no CI, unpinned dependencies (`>=` only), no `.venv` set up. | Medium | Fixed: 94 tests, CI, pinned dependencies, `.venv` (Phases 3, 4 and 7) |
+| G-11 | NFR-05 | `.gitignore` lacks `.env`, `.streamlit/secrets.toml` and `*.pyc`; there is no `.env.example`. | Low | Fixed: `.gitignore` covers secrets; `.env.example` added (Phase 6) |
+| G-12 | NFR-13 | Private working notes sat inside the project folder (never tracked by git). | Low (Phase 6) | Fixed: notes moved outside the repo; never in history (Phase 6) |
+| G-13 | docs | `docs/04_CLAUDE_WORKFLOW.md` refers to a "Client update" tab; the tab is called "Weekly client email". | Cosmetic | Fixed: doc updated (Phase 8) |
 
 **Met today (verified):** FR-01 to FR-06, FR-10 to FR-18 and FR-20/21 on demo data (every planted problem detected as specified, with no duplicates in `fct_ads_daily`); FR-31 to FR-35, FR-39 to FR-41; NFR-01 (about 0.7 s per rerun, build in a few seconds); NFR-09 (every colored status also carries a text label, sign or arrow); NFR-12. Once G-01 was patched in a scratch copy, all 18 filter combinations rendered with no exception and no "nan" or "inf" on screen.
