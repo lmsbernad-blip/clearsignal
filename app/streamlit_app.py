@@ -135,6 +135,40 @@ ui.hero(
     f"{as_of:%b} {as_of.day}, {as_of:%Y}",
 )
 
+# ---------------------------------------------------------------- start here: what this is, verdict, reading order
+high = client_qa[client_qa["severity"] == "High"]
+n_high, n_medium = len(high), int((client_qa["severity"] == "Medium").sum())
+if n_high:
+    examples = list(dict.fromkeys(high["title"]))[:2]
+    ready, verdict = False, "Not yet"
+    verdict_text = (
+        f"{n_high} problem{'s' if n_high != 1 else ''} would make the numbers wrong, "
+        f"for example: {'; '.join(t.lower() for t in examples)}. Tab 1 shows each one and the fix."
+    )
+elif n_medium:
+    ready, verdict = None, "Yes, with notes"
+    verdict_text = (
+        f"Nothing makes the numbers wrong today. {n_medium} item{'s' if n_medium != 1 else ''} to watch in tab 1."
+    )
+else:
+    ready, verdict, verdict_text = True, "Yes", "Every data check passed. The report can be shared as is."
+ui.briefing(
+    about=(
+        f"The reporting an ad agency runs for its client {client} ({model.lower()}). ClearSignal checks the ad data "
+        f"first, then shows the results and what to do next. All numbers are realistic sample data."
+    ),
+    verdict_title=verdict,
+    verdict_text=verdict_text,
+    ok=ready,
+    reading_order=[
+        ("Data health", "can we trust the numbers?"),
+        ("Do the numbers match?", "ad platforms vs Google Analytics"),
+        ("Results", "what the ads achieved"),
+        ("Where to spend next", "move budget for more " + words["results"]),
+        ("Weekly client email", "the update, ready to send"),
+    ],
+)
+
 daily = (
     cur.groupby("date")
     .agg(spend=("spend", "sum"), value=(f"{basis}_value", "sum"), conv=(f"{basis}_conversions", "sum"))
@@ -144,6 +178,21 @@ daily["roas"] = daily["value"] / daily["spend"].replace(0, float("nan"))
 daily["cpa"] = daily["spend"] / daily["conv"].replace(0, float("nan"))
 roas_text = "-" if pd.isna(kpi_now["roas"]) else f"${kpi_now['roas']:.2f}"
 cpa_text = usd(kpi_now["cpa"], 0) if not pd.isna(kpi_now["cpa"]) and kpi_now["cpa"] < 1000 else usd(kpi_now["cpa"])
+counted_by = "Google Analytics" if basis == "ga4" else "the ad platforms"
+roas_change = pct_change(kpi_now["roas"], kpi_prev["roas"])
+if pd.isna(roas_change):
+    trend = "no earlier period to compare with"
+elif abs(roas_change) < 0.005:
+    trend = f"about the same as the {days} days before"
+else:
+    trend = f"{'up' if roas_change > 0 else 'down'} {abs(roas_change):.0%} on the {days} days before"
+if kpi_now["spend"] and not pd.isna(kpi_now["roas"]):
+    ui.headline(
+        f"In the last {days} days, {usd(kpi_now['spend'])} of ads brought in {usd(kpi_now['value'])} in "
+        f"{words['value']}: {roas_text} back for every $1 spent, {trend}.",
+        emphasis=[usd(kpi_now["spend"]), usd(kpi_now["value"]), roas_text],
+        note=f"{words['Results']} counted by {counted_by}.",
+    )
 ui.kpi_cards(
     [
         (
@@ -153,6 +202,7 @@ ui.kpi_cards(
             True,
             daily["spend"],
             ui.TEAL,
+            "what the client paid the ad platforms",
         ),
         (
             words["Value"],
@@ -161,6 +211,7 @@ ui.kpi_cards(
             True,
             daily["value"],
             ui.TEAL,
+            f"what the ads brought in, counted by {counted_by}",
         ),
         (
             "Return per $1 spent",
@@ -169,6 +220,7 @@ ui.kpi_cards(
             True,
             daily["roas"],
             ui.ORANGE,
+            "what came back for every $1 of ads",
         ),
         (
             f"Cost per {words['result']}",
@@ -177,6 +229,7 @@ ui.kpi_cards(
             False,
             daily["cpa"],
             ui.ORANGE,
+            f"ad spend divided by the number of {words['results']}",
         ),
         (
             words["Results"],
@@ -185,17 +238,18 @@ ui.kpi_cards(
             True,
             daily["conv"],
             ui.TEAL,
+            f"{words['results']} counted by {counted_by}",
         ),
     ]
 )
 
 tabs = st.tabs(
     [
-        "Data health",
-        "Do the numbers match?",
-        "Results",
-        "Where to spend next",
-        "Weekly client email",
+        "1 · Data health",
+        "2 · Do the numbers match?",
+        "3 · Results",
+        "4 · Where to spend next",
+        "5 · Weekly client email",
         "Value to your agency",
         "How it works",
     ]

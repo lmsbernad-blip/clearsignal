@@ -6,6 +6,7 @@ All notable changes to ClearSignal are listed here. The format follows [Keep a C
 
 ### Added
 - Live demo link in the README (Streamlit Community Cloud).
+- First-glance clarity: a "Start here" panel (what you're looking at, whether the report can go to the client today, and how to read it), a plain-language headline sentence, a one-line meaning on each KPI card, captions on the five steps, and numbered tabs.
 - Dependabot: weekly pip and GitHub Actions update pull requests (numpy held below 2.5 while the project targets Python 3.11).
 - `docs/RUNBOOK.md`: refreshing data, rebuilding, adding a client or a check, releasing, and what to do if the deployed app fails.
 - Requirements gap list now records how each gap was resolved.
