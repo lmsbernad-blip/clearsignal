@@ -62,9 +62,26 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
 .stApp {{ background-color: {BG};
   background-image: radial-gradient(rgba(15,30,46,.07) 1px, transparent 1px);
   background-size: 22px 22px; }}
-#MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] {{ visibility: hidden; }}
+/* Hide Streamlit's own menu, deploy button and footer, but NOT the toolbar itself: the button that reopens a
+   collapsed sidebar lives inside it, and hiding the toolbar made the sidebar impossible to bring back. */
+#MainMenu, footer, [data-testid="stDecoration"], [data-testid="stMainMenu"], [data-testid="stMainMenuButton"],
+[data-testid="stAppDeployButton"], [data-testid="stToolbarActions"] {{ display: none !important; }}
+[data-testid="stToolbar"] {{ background: transparent; }}
+/* Reopen-sidebar control: always visible, styled as a clear "Filters" tab */
+[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"] {{ visibility: visible !important;
+  opacity: 1 !important; z-index: 1000; }}
+[data-testid="stExpandSidebarButton"] {{ width:auto !important; height:auto !important; padding:.42rem .75rem !important;
+  background:{INK} !important; color:#fff !important; border-radius:3px 10px 3px 10px !important;
+  box-shadow: 0 8px 18px -8px rgba(15,30,46,.6); display:inline-flex !important; align-items:center; gap:.4rem; }}
+[data-testid="stExpandSidebarButton"] svg, [data-testid="stExpandSidebarButton"] span {{ color:#fff !important; fill:#fff !important; }}
+[data-testid="stExpandSidebarButton"]::after {{ content:"Filters"; font-family:{MONO}; font-size:.7rem; letter-spacing:.08em;
+  text-transform:uppercase; }}
+[data-testid="stExpandSidebarButton"]:hover {{ background:{TEAL} !important; }}
+/* Collapse control inside the sidebar: always visible (Streamlit shows it only on hover) */
+[data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapseButton"] button {{ visibility: visible !important; opacity: .75; }}
 [data-testid="stHeader"] {{ background: transparent; height: 0; }}
 .block-container {{ padding-top: 1.4rem; padding-bottom: 3rem; max-width: 1320px; }}
+@media (max-width: 900px) {{ .block-container {{ padding-top: 3.6rem; }} }}  /* room for the Filters tab */
 
 /* ---------------------------------------------------------------- motion */
 @keyframes rise {{ from {{ opacity:0; transform: translateY(10px); }} to {{ opacity:1; transform:none; }} }}
