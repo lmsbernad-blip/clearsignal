@@ -8,7 +8,7 @@ with w as (
            sum(platform_conversions) as platform_conversions,
            sum(ga4_conversions) as ga4_conversions
     from mart_campaign_daily
-    where date >= (select max(date) from mart_campaign_daily) - interval 55 day
+    where date >= (select max(date) from mart_campaign_daily) - to_days(cast(getvariable('recon_days') as integer))
     group by all
 )
 select *,
@@ -17,10 +17,10 @@ select *,
         when campaign_type = 'UNMAPPED'                         then 'Fix: new campaign not set up in reporting'
         when ga4_conversions = 0 and platform_conversions > 0  then 'Fix: not visible in Google Analytics'
         when platform_conversions = 0 and ga4_conversions > 0  then 'Fix: ad platform stopped counting'
-        when platform = 'Meta Ads' and platform_conversions / nullif(ga4_conversions, 0) between 1.15 and 1.70
+        when platform = 'Meta Ads' and platform_conversions / nullif(ga4_conversions, 0) between getvariable('meta_view_low') and getvariable('meta_view_high')
                                                                then 'Normal: Meta also counts people who only saw an ad'
-        when abs(platform_conversions / nullif(ga4_conversions, 0) - 1) <= 0.20
-                                                               then 'Matches (within 20%)'
+        when abs(platform_conversions / nullif(ga4_conversions, 0) - 1) <= getvariable('match_tolerance')
+                                                               then getvariable('match_status')
         else 'Needs a closer look'
     end as status
 from w;

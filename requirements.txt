@@ -1,5 +1,7 @@
-streamlit>=1.50
-pandas>=2.2
-numpy>=1.26
-plotly>=5.20
-duckdb>=1.1
+# Runtime dependencies (used by Streamlit Community Cloud). Pinned for reproducible builds.
+# Python 3.11+ (numpy 2.5+ needs 3.12, so numpy stays on 2.4.x).
+streamlit==1.67.0
+pandas==3.1.1
+numpy==2.4.6
+plotly==7.1.0
+duckdb==2.0.1
