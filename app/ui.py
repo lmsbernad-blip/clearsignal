@@ -145,6 +145,32 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
   border:1.5px solid rgba(255,255,255,.55); box-sizing:border-box; }}
 .node span {{ font-family:{MONO}; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; opacity:.85; }}
 .node span b {{ color:{ORANGE}; margin-right:.3rem; font-weight:700; }}
+.node em {{ font-style:normal; font-size:.7rem; opacity:.62; white-space:nowrap; line-height:1.3; }}
+@media (max-width: 900px) {{ .node em {{ display:none; }}
+  .track {{ display:grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap:.3rem; }}
+  .node span {{ font-size:.58rem; letter-spacing:.04em; }} .node span b {{ display:block; margin:0 0 .1rem; }} }}
+.node:last-child em {{ text-align:right; }}
+
+/* ---------------------------------------------------------------- "start here" briefing */
+.brief {{ display:grid; grid-template-columns: 1.15fr 1fr 1.25fr; gap:.85rem; margin:0 0 1rem; }}
+@media (max-width: 1000px) {{ .brief {{ grid-template-columns: 1fr; }} }}
+.brief > div {{ background:#fff; border:1px solid {LINE}; border-radius:4px 16px 4px 16px; padding:.85rem 1.05rem;
+  animation: rise .55s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i) * 80ms); }}
+.brief-k {{ font-family:{MONO}; font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:{TEAL}; margin-bottom:.35rem; }}
+.brief p {{ margin:0; font-size:.86rem; color:#334155; line-height:1.5; }}
+.verdict {{ border-left:4px solid var(--c) !important; }}
+.verdict-h {{ display:flex; align-items:center; gap:.5rem; font-family:{DISPLAY}; font-weight:700; font-size:1.12rem; color:{INK}; margin-bottom:.2rem; }}
+.verdict-i {{ width:22px; height:22px; border-radius:50%; background:var(--c); color:#fff; display:inline-flex;
+  align-items:center; justify-content:center; font-size:.8rem; font-weight:800; flex:none; }}
+.howto {{ margin:0; padding:0; list-style:none; counter-reset: how; display:grid; gap:.22rem; }}
+.howto li {{ counter-increment: how; font-size:.83rem; color:#334155; display:flex; gap:.5rem; align-items:baseline; }}
+.howto li::before {{ content: counter(how); font-family:{MONO}; font-size:.66rem; font-weight:700; color:#fff; background:{INK};
+  border-radius:3px; padding:.05rem .38rem; flex:none; }}
+.howto b {{ color:{INK}; }}
+.headline {{ font-family:{DISPLAY}; font-size:1.06rem; color:{INK}; margin:.2rem 0 .7rem; letter-spacing:-.01em; line-height:1.45;
+  animation: rise .55s cubic-bezier(.2,.7,.2,1) both .1s; }}
+.headline b {{ color:{TEAL}; }}
+.headline small {{ font-family:{BODY}; font-size:.78rem; color:{MUTED}; margin-left:.35rem; }}
 
 /* ---------------------------------------------------------------- KPI readouts */
 .kpis {{ display:grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap:.85rem; margin-bottom:1.2rem; }}
@@ -155,6 +181,7 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
 .kpi::before {{ content:""; position:absolute; left:0; top:0; height:3px; width:100%; background: var(--accent);
   transform-origin:left; animation: sweep .9s cubic-bezier(.6,.05,.3,1) both; animation-delay: calc(.2s + var(--i) * 90ms); }}
 .kpi-label {{ font-family:{MONO}; color:{MUTED}; font-size:.68rem; font-weight:500; text-transform:uppercase; letter-spacing:.1em; }}
+.kpi-cap {{ font-size:.74rem; color:{MUTED}; line-height:1.35; margin:.15rem 0 .1rem; min-height:2em; }}
 .kpi-value {{ font-family:{DISPLAY}; font-size:1.75rem; font-weight:700; color:{INK}; letter-spacing:-.03em;
   margin:.25rem 0 .2rem; font-variant-numeric: tabular-nums; overflow:hidden; }}
 .kpi-value span {{ display:inline-block; animation: digits .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(.3s + var(--i) * 90ms); }}
@@ -170,9 +197,9 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
 /* ---------------------------------------------------------------- tabs: a channel selector */
 .stTabs [role="tablist"] {{ gap:.2rem; background:#fff; padding:.3rem; border-radius:4px 14px 4px 14px;
   border:1px solid {LINE}; box-shadow:0 1px 2px rgba(15,30,46,.04); overflow-x:auto; }}
-.stTabs [data-testid="stTab"] {{ position:relative; padding:.55rem 1rem !important; border-radius:3px 10px 3px 10px;
+.stTabs [data-testid="stTab"] {{ position:relative; padding:.55rem .72rem !important; border-radius:3px 10px 3px 10px;
   margin:0 !important; cursor:pointer; transition: background .2s, transform .2s; }}
-.stTabs [data-testid="stTab"] p {{ font-weight:600; font-size:.86rem; color:{MUTED} !important; margin:0; white-space:nowrap; }}
+.stTabs [data-testid="stTab"] p {{ font-weight:600; font-size:.83rem; color:{MUTED} !important; margin:0; white-space:nowrap; }}
 .stTabs [data-testid="stTab"]:hover {{ background:#F1F5F9; }}
 .stTabs [data-testid="stTab"][aria-selected="true"] {{ background:{INK} !important; }}
 .stTabs [data-testid="stTab"][aria-selected="true"] p {{ color:#fff !important; }}
@@ -317,9 +344,16 @@ def hero(client: str, subtitle: str, n_high: int, as_of: str) -> None:
         if n_high
         else '<span class="pill pill-green"><span class="dot" style="background:#6EE7B7"></span>Numbers checked and ready</span>'
     )
+    steps = [
+        ("Collect", "3 data sources"),
+        ("Check", "8 data checks · tab 1"),
+        ("Compare", "platforms vs GA4 · tab 2"),
+        ("Report", "results · tab 3"),
+        ("Advise", "budget, email · tabs 4–5"),
+    ]
     nodes = "".join(
-        f'<div class="node" style="--i:{i}"><span><b>{i + 1:02d}</b>{s}</span></div>'
-        for i, s in enumerate(["Collect", "Check", "Compare", "Report", "Advise"])
+        f'<div class="node" style="--i:{i}"><span><b>{i + 1:02d}</b>{s}</span><em>{esc(cap)}</em></div>'
+        for i, (s, cap) in enumerate(steps)
     )
     st.markdown(
         f"""<div class="hero">{_hero_wave()}<div class="hero-top"><div>
@@ -355,12 +389,14 @@ def sparkline(values: Iterable[float], color: str = TEAL, w: int = 180, h: int =
 
 
 def kpi_cards(items: list[tuple]) -> None:
-    """Row of KPI readouts. items: (label, value_str, delta or None, good_when_up, spark_values, color).
+    """Row of KPI readouts. items: (label, value_str, delta or None, good_when_up, spark_values, color[, caption]).
 
     The change is shown with an arrow and a sign, not only a color.
     """
     cards = []
-    for i, (label, value, delta, up_good, spark, color) in enumerate(items):
+    for i, item in enumerate(items):
+        label, value, delta, up_good, spark, color = item[:6]
+        caption = item[6] if len(item) > 6 else ""
         if delta is None or np.isnan(delta):
             d = '<span class="delta delta-flat">n/a</span>'
         else:
@@ -369,9 +405,42 @@ def kpi_cards(items: list[tuple]) -> None:
             d = f'<span class="delta {cls}">{arrow} {abs(delta):.1%}</span>'
         cards.append(
             f'<div class="kpi rise" style="--i:{i};--accent:{color}"><div class="kpi-label">{esc(label)}</div>'
-            f'<div class="kpi-value"><span>{esc(value)}</span></div>{d}{sparkline(spark, color)}</div>'
+            f'<div class="kpi-value"><span>{esc(value)}</span></div>'
+            f"{f'<div class=kpi-cap>{esc(caption)}</div>' if caption else ''}{d}{sparkline(spark, color)}</div>"
         )
     st.markdown(f'<div class="kpis">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+
+def briefing(
+    about: str, verdict_title: str, verdict_text: str, ok: bool | None, reading_order: list[tuple[str, str]]
+) -> None:
+    """'Start here' panel: what you're looking at, a plain verdict, and the order to read the tabs.
+
+    ok: True = ready, None = ready with notes, False = not ready. The verdict carries an icon and words,
+    not only a color.
+    """
+    color, icon = {True: (GREEN, "✓"), None: (AMBER, "!"), False: (RED, "✕")}[ok]
+    steps = "".join(f"<li><span><b>{esc(t)}</b>: {esc(d)}</span></li>" for t, d in reading_order)
+    st.markdown(
+        f"""<div class="brief">
+      <div style="--i:0"><div class="brief-k">What you're looking at</div><p>{esc(about)}</p></div>
+      <div class="verdict" style="--i:1;--c:{color}"><div class="brief-k">Can this report go to the client today?</div>
+        <div class="verdict-h"><span class="verdict-i" aria-hidden="true">{icon}</span>{esc(verdict_title)}</div>
+        <p>{esc(verdict_text)}</p></div>
+      <div style="--i:2"><div class="brief-k">How to read it</div><ol class="howto">{steps}</ol></div></div>""",
+        unsafe_allow_html=True,
+    )
+
+
+def headline(sentence: str, emphasis: list[str], note: str = "") -> None:
+    """The period's results in one plain sentence; each value in `emphasis` is highlighted."""
+    text = esc(sentence)
+    for value in emphasis:
+        e = esc(value)
+        text = text.replace(e, f"<b>{e}</b>", 1)
+    st.markdown(
+        f'<div class="headline">{text}{f"<small>{esc(note)}</small>" if note else ""}</div>', unsafe_allow_html=True
+    )
 
 
 def section(title: str, text: str = "") -> None:

@@ -16,11 +16,11 @@ CLIENTS = ["DTC Skincare", "B2B SaaS", "Home Services"]
 PERIODS = ["Last 7 days", "Last 30 days", "Last 90 days"]
 BASES = ["Google Analytics (recommended)", "Each ad platform's own numbers"]
 TABS = [
-    "Data health",
-    "Do the numbers match?",
-    "Results",
-    "Where to spend next",
-    "Weekly client email",
+    "1 · Data health",
+    "2 · Do the numbers match?",
+    "3 · Results",
+    "4 · Where to spend next",
+    "5 · Weekly client email",
     "Value to your agency",
     "How it works",
 ]
@@ -68,6 +68,19 @@ def test_lead_gen_client_never_says_sales(use_demo_warehouse):
     at.run()
     summary = [m.value for m in at.markdown if 'class="summary"' in m.value][0]
     assert "leads" in summary and "sales" not in summary
+
+
+def test_start_here_panel_gives_a_plain_verdict(use_demo_warehouse):
+    at = AppTest.from_file(APP, default_timeout=60)
+    at.run()
+    at.sidebar.selectbox[0].select("DTC Skincare")
+    at.run()
+    text = page_text(at)
+    assert "What you&#x27;re looking at" in text or "What you're looking at" in text
+    assert "Can this report go to the client today?" in text and "Not yet" in text
+    assert "5 problems would make the numbers wrong" in text
+    assert "In the last 30 days," in text and "back for every $1 spent" in text
+    assert "what came back for every $1 of ads" in text
 
 
 def test_header_counts_high_issues(use_demo_warehouse):
