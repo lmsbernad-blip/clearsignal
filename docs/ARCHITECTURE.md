@@ -140,4 +140,31 @@ Recommendation: **1–8** are worth doing before release; 9 and 10 improve quali
 
 ## 7. Threat model
 
-Added in Phase 6.
+**Scope:** the public GitHub repository and the public Streamlit Community Cloud demo. The data is simulated; the design still assumes a future deployment with real client exports.
+
+### Assets
+
+| Asset | Why it matters |
+|---|---|
+| Client ad and analytics data (simulated now; real in a future deployment) | Confidential to the agency's clients |
+| `ANTHROPIC_API_KEY` | Billing and abuse risk if leaked |
+| Integrity of reported numbers and recommendations | Wrong numbers reach clients and move real budget |
+| The weekly client email | Goes out under the agency's name |
+| The deployed app | Public face of the project |
+
+### Threats and mitigations
+
+| # | Threat | Mitigation | Verified by |
+|---|---|---|---|
+| T1 | **Secret leaked in the repo or history** | Key read only from the environment, `.env` or `st.secrets`; `.env`, `.env.*` and `.streamlit/secrets.toml` are git-ignored; `.env.example` holds placeholders; the scripts never log the key or the prompt | History scan (clean); `test_no_secrets_in_tracked_files` |
+| T2 | **SQL injection** | No user input reaches SQL (all filtering is in pandas); table names pass an allowlist (`config.APP_TABLES`); config values become escaped SQL literals | `test_table_allowlist_blocks_injection`; bandit B608 reviewed |
+| T3 | **HTML / script injection** through data (client, campaign or check text) rendered with `unsafe_allow_html` | Every data value goes through `ui.esc`; Plotly titles and labels go through `ui.plot_text`; the only raw HTML is text written in the code | `test_html_in_data_is_escaped_everywhere`, `test_chart_labels_are_escaped` (inject `<script>` and `<img onerror>`) |
+| T4 | **Prompt injection**: a campaign name or check detail tells Claude to ignore its rules or invent numbers | Instructions come first; data sits in `client`, `facts` and `open_issues` blocks with angle brackets escaped, so it can't close a block; the rules say block contents are data; a person reviews every draft before sending | `test_prompt_keeps_data_inside_its_blocks` |
+| T5 | **Tampering with the warehouse** from the app | The app never opens DuckDB itself; every read uses `read_only=True`; the only writable connection is the build's temporary file | `test_app_reads_only_read_only` |
+| T6 | **Corrupt or malicious input files** skew the numbers or crash the app | Input contracts (columns, types, date range, no negatives, USD); data tests after the build; atomic build; friendly errors with no stack traces | `test_validation.py`, `test_pipeline.py` |
+| T7 | **Vulnerable dependency** | Pinned versions; `pip-audit` in CI; Dependabot weekly | CI |
+| T8 | **Insecure code pattern** | `bandit` in CI (no unresolved findings) | CI |
+| T9 | **Real or personal data published by mistake** | Demo data is generated, labeled as a simulation in the README, app and docs; private notes live outside the repo; `SECURITY.md` explains how to handle real data | Repo review; `test_no_secrets_in_tracked_files` |
+| T10 | **Abuse of the public demo** (heavy use) | No API calls or writes in the app; cached reads; Streamlit Cloud's own limits | n/a (demo-level risk accepted) |
+
+**Residual risks (accepted for a demo):** the deployed app has no login, which is fine for simulated data but not for real data (see `SECURITY.md`). The Meta export carries no currency column, so USD is assumed for Meta.
