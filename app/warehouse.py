@@ -115,7 +115,7 @@ def build(db_path: Path | None = None, root: Path | None = None, sql_dir: Path |
                     raise WarehouseError(f"{sql_file.name}: {_explain(err)}") from err
                 log.info("ran %s", sql_file.name)
             _check_data_tests(con)
-            counts = {t: con.execute(f"select count(*) from {t}").fetchone()[0] for t in config.REQUIRED_TABLES}  # noqa: S608 - names from config
+            counts = {t: con.execute(f"select count(*) from {t}").fetchone()[0] for t in config.REQUIRED_TABLES}  # nosec B608 - table names come only from config.REQUIRED_TABLES
         finally:
             con.close()
         try:
@@ -139,6 +139,6 @@ def read_table(name: str, db_path: Path | None = None) -> pd.DataFrame:
         raise ValueError(f"Table {name!r} is not one the app may read.")
     try:
         with duckdb.connect(str(db_path), read_only=True) as con:
-            return con.execute(f"select * from {name}").df()  # noqa: S608 - name checked against allowlist
+            return con.execute(f"select * from {name}").df()  # nosec B608 - name checked against config.APP_TABLES above
     except duckdb.Error as err:
         raise WarehouseError(f"Couldn't read {name} from the warehouse: {_first_line(str(err))}") from err
