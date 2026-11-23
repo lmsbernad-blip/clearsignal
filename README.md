@@ -1,5 +1,7 @@
 # ClearSignal · ad results you can trust
 
+[![CI](https://github.com/lmsbernad-blip/clearsignal/actions/workflows/ci.yml/badge.svg)](https://github.com/lmsbernad-blip/clearsignal/actions/workflows/ci.yml)
+
 **ClearSignal helps an ad agency take over a client's reporting fast: it collects the data, checks it every morning, explains why ad platforms and Google Analytics disagree, and turns the numbers into budget advice and a weekly client email.**
 
 _Under the hood: a repeatable data onboarding kit (SQL + Python + Streamlit + Claude)._
