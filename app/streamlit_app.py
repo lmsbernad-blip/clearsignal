@@ -524,7 +524,9 @@ with tabs[5]:
         us_cost = st.number_input(
             "Yearly cost of a US-based analyst, salary plus benefits ($)", 50_000, 250_000, 95_000, 5_000
         )
-        discount = st.slider("Savings with an offshore staffing partner vs a US hire (%) · typical: 60%", 0, 80, 60, 5) / 100
+        discount = (
+            st.slider("Savings with an offshore staffing partner vs a US hire (%) · typical: 60%", 0, 80, 60, 5) / 100
+        )
         rate = st.number_input("What one hour of analyst time is worth to the agency ($)", 20, 300, 75, 5)
     hours_before = accounts * hrs
     hours_saved = hours_before * auto
