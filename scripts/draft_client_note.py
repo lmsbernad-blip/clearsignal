@@ -25,6 +25,16 @@ from prompts import client_note_prompt  # noqa: E402
 log = logging.getLogger("clearsignal.draft")
 
 
+def load_dotenv(path: Path = config.ROOT / ".env") -> None:
+    """Read KEY=VALUE lines from a local .env file (git-ignored) without overriding real environment variables."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#") and key not in os.environ and value.strip():
+            os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
 def build_prompt(client: str) -> str:
     """The Claude prompt for one client, from the current warehouse. Raises ValueError for an unknown client."""
     df = load()
@@ -51,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
         log.error("%s", err)
         return 1
 
+    load_dotenv()
     if not os.environ.get("ANTHROPIC_API_KEY"):
         log.info("ANTHROPIC_API_KEY is not set: printing the prompt to paste into Claude.")
         print(prompt)

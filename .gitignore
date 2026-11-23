@@ -1,13 +1,25 @@
+# Python
 .venv/
 __pycache__/
+*.pyc
+
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Built warehouse (rebuilt from data/ by scripts/build_warehouse.py)
 data/warehouse.duckdb
 data/warehouse.duckdb.wal
-.DS_Store
-
+data/*.tmp
 
 # Tool caches
 .pytest_cache/
 .ruff_cache/
 .coverage
 htmlcov/
-*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
