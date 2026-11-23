@@ -6,7 +6,7 @@
 
 _Under the hood: a repeatable data onboarding kit (SQL + Python + Streamlit + Claude)._
 
-**Live demo:** [clearsignal.streamlit.app](https://clearsignal-weehhlc3xrqohydemrycjr.streamlit.app/) _(free hosting: if the app has been idle, click "wake up" and give it about a minute)_
+**Live demo:** [open ClearSignal on Streamlit Community Cloud](https://clearsignal-weehhlc3xrqohydemrycjr.streamlit.app/) _(free hosting: if the app has been idle, click "wake up" and give it about a minute)_
 
 ![Data QA](docs/data_qa.png)
 
