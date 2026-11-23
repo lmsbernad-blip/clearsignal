@@ -143,7 +143,7 @@ if n_high:
     ready, verdict = False, "Not yet"
     verdict_text = (
         f"{n_high} problem{'s' if n_high != 1 else ''} would make the numbers wrong, "
-        f"for example: {'; '.join(t.lower() for t in examples)}. Tab 1 shows each one and the fix."
+        f"for example: {'; '.join(t[:1].lower() + t[1:] for t in examples)}. Tab 1 shows each one and the fix."
     )
 elif n_medium:
     ready, verdict = None, "Yes, with notes"
