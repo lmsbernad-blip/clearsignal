@@ -28,7 +28,7 @@ This kit makes onboarding the same five steps for every client, so an analyst pr
 | **4. Report** | Dashboard: KPIs, campaign scorecard, pacing vs media plan, GA4 vs platform toggle | `app/` |
 | **5. Recommend** | Budget optimizer (diminishing-returns curves, brand-search cap) and a Claude-drafted weekly client update | `app/analytics.py`, `app/prompts.py` |
 
-Documentation an analyst owns is included: [onboarding checklist](docs/01_ONBOARDING_CHECKLIST.md), [KPI & data dictionary with reporting standards](docs/02_KPI_DATA_DICTIONARY.md), [a worked discrepancy investigation](docs/03_DISCREPANCY_CASE_STUDY.md) and [the Claude workflow](docs/04_CLAUDE_WORKFLOW.md). Engineering docs: [requirements](docs/REQUIREMENTS.md), [architecture and threat model](docs/ARCHITECTURE.md) and [security policy](SECURITY.md).
+Documentation an analyst owns is included: [onboarding checklist](docs/01_ONBOARDING_CHECKLIST.md), [KPI & data dictionary with reporting standards](docs/02_KPI_DATA_DICTIONARY.md), [a worked discrepancy investigation](docs/03_DISCREPANCY_CASE_STUDY.md) and [the Claude workflow](docs/04_CLAUDE_WORKFLOW.md). Engineering docs: [requirements](docs/REQUIREMENTS.md), [architecture and threat model](docs/ARCHITECTURE.md), [runbook](docs/RUNBOOK.md) and [security policy](SECURITY.md).
 
 ## What it found in the demo onboarding
 
@@ -73,7 +73,7 @@ The tests build their own warehouse in a temporary folder, so they never touch `
 |---|---|---|
 | **Tests** | 94 pytest tests: KPI math on hand-made data, optimizer guardrails (same total budget, 70–150% per channel, brand-name search capped at +10%), every planted problem detected exactly, a clean-data negative test, and every tab rendered for every client, period and counting option | `tests/` |
 | **Data checks** | *Before the build:* input contracts (required columns, types that parse, dates in range, no negative spend, impressions or clicks, USD only). *After the build:* 9 data tests (one row per date × client × platform × campaign, spend preserved to the cent, no null keys, known campaign types and statuses). Any failure stops the build and keeps the previous warehouse. | `app/contracts.py`, `sql/05_data_tests.sql` |
-| **CI** | On every push and pull request: ruff, bandit, pip-audit, a check that the demo data is reproducible, the warehouse build, and pytest with an 80% coverage gate | `.github/workflows/ci.yml` |
+| **CI** | On every push and pull request: ruff, bandit, pip-audit, a check that the demo data is reproducible, the warehouse build, and pytest with an 80% coverage gate | `.github/workflows/ci.yml`; Dependabot opens weekly update PRs (`.github/dependabot.yml`) |
 | **Security** | No secrets in the repo (the key lives in the environment or Streamlit Secrets); an allowlist for table reads; read-only database access from the app; every data value HTML-escaped; prompt data kept in delimited blocks; a threat model | [SECURITY.md](SECURITY.md), [threat model](docs/ARCHITECTURE.md#7-threat-model) |
 | **Accessibility** | Status is never shown by color alone (text labels, arrows, signed numbers, signal-bar glyphs); animations switch off when the system asks for reduced motion | `app/ui.py` |
 
@@ -87,8 +87,8 @@ scripts/             generate demo data, build warehouse, draft client note with
 app/                 streamlit_app.py (entry), analytics, ui, prompts, config (thresholds and paths),
                      contracts (input checks), warehouse (build and read-only access)
 tests/               unit, pipeline, validation, security and app smoke tests
-docs/                checklist, data dictionary, case study, Claude workflow, requirements, architecture
-.github/             CI workflow, pull request template
+docs/                checklist, data dictionary, case study, Claude workflow, requirements, architecture, runbook
+.github/             CI workflow, Dependabot, pull request template
 ```
 
 ## Next steps

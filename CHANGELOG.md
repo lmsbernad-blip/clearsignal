@@ -2,6 +2,14 @@
 
 All notable changes to ClearSignal are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Live demo link in the README (Streamlit Community Cloud).
+- Dependabot: weekly pip and GitHub Actions update pull requests (numpy held below 2.5 while the project targets Python 3.11).
+- `docs/RUNBOOK.md`: refreshing data, rebuilding, adding a client or a check, releasing, and what to do if the deployed app fails.
+- Requirements gap list now records how each gap was resolved.
+
 ## [1.0.0] - 2026-11-23
 
 First public release.

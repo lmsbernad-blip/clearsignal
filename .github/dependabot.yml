@@ -1,0 +1,25 @@
+# Weekly dependency updates. Each update arrives as a pull request, and CI (Python 3.11) must pass before merging.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-tools:
+        patterns: ["pytest*", "ruff", "bandit", "pip-audit"]
+    ignore:
+      # numpy 2.5+ requires Python 3.12; the app targets Python 3.11 (Streamlit Cloud and CI).
+      # Remove this rule when the project moves to Python 3.12.
+      - dependency-name: numpy
+        versions: [">=2.5"]
+    labels: ["dependencies"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: ["dependencies", "ci"]
