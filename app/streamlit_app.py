@@ -262,7 +262,7 @@ with tabs[1]:
         fig = go.Figure()
         for status, g in rc.groupby("typical_status"):
             fig.add_bar(
-                y=g["label"],
+                y=g["label"].map(ui.plot_text),
                 x=g["gap"],
                 orientation="h",
                 name=status,
@@ -343,6 +343,7 @@ with tabs[2]:
         wk = (
             client_df[client_df["date"] > as_of - pd.Timedelta(days=max(days, 56))]
             .assign(week=lambda d: d["date"].dt.to_period("W").dt.start_time)
+            .assign(channel=lambda d: d["channel"].map(ui.plot_text))
             .groupby(["week", "channel"])[["spend", f"{basis}_value"]]
             .sum()
             .reset_index()
@@ -440,7 +441,7 @@ with tabs[3]:
             p = plan.sort_values("change_pct")
             fo = go.Figure(
                 go.Bar(
-                    y=p["channel"],
+                    y=p["channel"].map(ui.plot_text),
                     x=p["change_pct"],
                     orientation="h",
                     marker_color=[ui.GREEN if v > 0 else ui.RED for v in p["change_pct"]],
@@ -457,7 +458,7 @@ with tabs[3]:
             fm = go.Figure(
                 go.Bar(
                     x=plan["current_marginal_roas"],
-                    y=plan["channel"],
+                    y=plan["channel"].map(ui.plot_text),
                     orientation="h",
                     marker_color=ui.TEAL,
                     text=[f"${v:.2f}" for v in plan["current_marginal_roas"]],

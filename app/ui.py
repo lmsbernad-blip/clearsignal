@@ -150,7 +150,9 @@ html, body, [class*="css"], .stMarkdown, .stText, button, input {{ font-family: 
 def style(fig: go.Figure, title: str = "", height: int = 380, legend: bool = True) -> go.Figure:
     """Consistent chart chrome: title top-left, legend below, no axis titles."""
     fig.update_layout(
-        title=dict(text=f"<b>{title}</b>" if title else None, x=0.01, y=0.97, yanchor="top", font=dict(size=15)),
+        title=dict(
+            text=f"<b>{plot_text(title)}</b>" if title else None, x=0.01, y=0.97, yanchor="top", font=dict(size=15)
+        ),
         height=height,
         showlegend=legend,
         margin=dict(l=8, r=16, t=56 if title else 16, b=48 if legend else 8),
@@ -164,6 +166,11 @@ def style(fig: go.Figure, title: str = "", height: int = 380, legend: bool = Tru
 def esc(x: object) -> str:
     """HTML-escape any value before it goes into markup rendered with unsafe_allow_html."""
     return html.escape(str(x))
+
+
+def plot_text(x: object) -> str:
+    """Escape text for Plotly, which renders tags such as <b> and <a href> in titles, labels and legends."""
+    return html.escape(str(x), quote=False)
 
 
 def sidebar_brand() -> None:
@@ -245,7 +252,7 @@ def kpi_cards(items: list[tuple]) -> None:
 def section(title: str, text: str = "") -> None:
     """Section heading with an optional one-line explanation."""
     st.markdown(
-        f'<div class="sec"><h3>{esc(title)}</h3>{f"<p>{text}</p>" if text else ""}</div>', unsafe_allow_html=True
+        f'<div class="sec"><h3>{esc(title)}</h3>{f"<p>{esc(text)}</p>" if text else ""}</div>', unsafe_allow_html=True
     )
 
 
