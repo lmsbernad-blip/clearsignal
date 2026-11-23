@@ -79,6 +79,9 @@ def test_start_here_panel_gives_a_plain_verdict(use_demo_warehouse):
     assert "What you&#x27;re looking at" in text or "What you're looking at" in text
     assert "Can this report go to the client today?" in text and "Not yet" in text
     assert "5 problems would make the numbers wrong" in text
+    at.sidebar.selectbox[0].select("B2B SaaS")
+    at.run()
+    assert "not visible in Google Analytics" in page_text(at)  # brand names keep their capitals
     assert "In the last 30 days," in text and "back for every $1 spent" in text
     assert "what came back for every $1 of ads" in text
 
